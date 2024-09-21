@@ -77,7 +77,7 @@
           
           // Отрисовка столбцов соответствующих частоте
           for(let _1 = 0; _1 < bufferLength; _1++) {
-            ctx.fillStyle = gradientColors[dataArray[_1]];
+            ctx.fillStyle = gradientColors[_1];
             // ctx.fillStyle = gradientColors[_1];
             
             ctx.fillRect(_1 * (w / bufferLength), h, w / bufferLength, -dataArray[_1] * h / 255);
