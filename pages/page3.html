@@ -82,7 +82,7 @@
         source.connect(analyzer);
         
         // Настраиваем анализатор
-        analyzer.fftSize = 2048;
+        analyzer.fftSize = 1024;
         const bufferLength = analyzer.frequencyBinCount;
         const dataArray = new Uint8Array(bufferLength);
         
@@ -142,7 +142,7 @@
   // Создаем массив цветов градиента
   const color1 = [0, 80, 60]; 
   const color2 = [360, 80, 60]; 
-  const steps = 1024; 
+  const steps = 512; 
   
   const gradientColors = interpolateColor(color1, color2, steps);
   
