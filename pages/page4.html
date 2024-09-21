@@ -1,0 +1,108 @@
+<!doctype html>
+
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta lang="ru">
+  <meta autor="Serepok">
+  
+  <title>Microphone</title>
+</head>
+
+<style>
+  canvas{
+    background-color: black;
+    width: 100%;
+    padding: 0;
+    margin: 0;
+  }
+  body{
+    padding: 0;
+    margin: 0;
+    overflow: hidden;
+  }
+</style>
+
+<body>
+  <canvas id="myCanvas" width="1920" height="1080"></canvas>
+</body>
+
+<script>
+  function micro() {
+    // Проверяем, поддерживает ли браузер getUserMedia
+    if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+      // Запрашиваем доступ к микрофону
+      navigator.mediaDevices.getUserMedia({ audio: true })
+      .then(function(stream) {
+        // Создаем аудиоконтекст
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        
+        // Создаем источник из потока
+        const source = audioContext.createMediaStreamSource(stream);
+        
+        // Создаем анализатор
+        const analyzer = audioContext.createAnalyser();
+        source.connect(analyzer);
+        
+        // Настраиваем анализатор
+        analyzer.fftSize = 1024;
+        const bufferLength = analyzer.frequencyBinCount;
+        const dataArray = new Uint8Array(bufferLength);
+        
+        // Функция для получения данных
+        function update() {
+          // Заполняем dataArray данными о частоте
+          analyzer.getByteFrequencyData(dataArray);
+          // Здесь можно обработать dataArray (например, отобразить на графике)
+          
+          // Очистка холста
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+          
+          // Отрисовка окружностей соответствующих частоте
+          for(let x = 0; x < 17; x++) {
+            for(let y = 0; y < 10; y++) {
+              index = x * 10 + y;
+              color = `rgb(${dataArray[3 * index]}, ${dataArray[3 * index + 1]}, ${dataArray[3 * index + 2]})`;
+              
+              ctx.fillStyle = color;
+              ctx.fillRect(x * w / 17, y * h / 10, w / 17, h / 10);
+            }
+          }
+          
+          requestAnimationFrame(update);
+        }
+        
+        update(); // Запускаем обновление
+      })
+      .catch(function(err) {
+        alert('Ошибка доступа к микрофону: ' + err);
+      });
+    } else {
+      alert('Ваш браузер не поддерживает getUserMedia');
+    }
+    
+  }
+  
+  micro()
+  
+  const canvas = document.getElementById("myCanvas");
+  const ctx = canvas.getContext("2d");
+  
+  // Устанавливаем размеры канваса равными окну при загрузке
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+  
+  // Обработчик изменения размера окна
+  window.addEventListener('resize', () => {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    w = canvas.clientWidth;
+    h = canvas.clientHeight;
+  });
+  
+  var w = canvas.clientWidth;
+  var h = canvas.clientHeight;
+  
+</script>
+
+</html>
