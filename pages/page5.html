@@ -1,0 +1,145 @@
+<!doctype html>
+
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta lang="ru">
+  <meta autor="Serepok">
+  
+  <title>Microphone</title>
+</head>
+
+<style>
+  canvas{
+    background-color: black;
+    width: 100%;
+    padding: 0;
+    margin: 0;
+  }
+  body{
+    padding: 0;
+    margin: 0;
+    overflow: hidden;
+  }
+</style>
+
+<body>
+  <canvas id="myCanvas" width="1920" height="1080"></canvas>
+</body>
+
+<script>
+  const drawArcFill = (x, y, radius, color, start, end) => {
+    ctx.beginPath(); // Начинаем новый путь
+    ctx.arc(x, y, radius, start, end); // Создаем окружность
+    ctx.lineTo(x, y);
+    ctx.fillStyle = color; // Цвет покраски
+    ctx.fill()
+    ctx.closePath(); // Заканчиваем путь
+  };
+
+
+  function interpolateColor(color1, color2, steps) {
+    const colorArray = [];
+    
+    const stepFactor = 1 / (steps - 1);
+    
+    for (let i = 0; i < steps; i++) {
+      const h = Math.round(color1[0] + (color2[0] - color1[0]) * (i * stepFactor));
+      const s = Math.round(color1[1] + (color2[1] - color1[1]) * (i * stepFactor));
+      const l = Math.round(color1[2] + (color2[2] - color1[2]) * (i * stepFactor));
+      
+      colorArray.push(`hsl(${h}, ${s}%, ${l}%)`);
+    }
+    
+    return colorArray;
+  }
+  
+  
+  function micro() {
+    // Проверяем, поддерживает ли браузер getUserMedia
+    if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+      // Запрашиваем доступ к микрофону
+      navigator.mediaDevices.getUserMedia({ audio: true })
+      .then(function(stream) {
+        // Создаем аудиоконтекст
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        
+        // Создаем источник из потока
+        const source = audioContext.createMediaStreamSource(stream);
+        
+        // Создаем анализатор
+        const analyzer = audioContext.createAnalyser();
+        source.connect(analyzer);
+        
+        // Настраиваем анализатор
+        analyzer.fftSize = 1024;
+        const bufferLength = analyzer.frequencyBinCount;
+        const dataArray = new Uint8Array(bufferLength);
+        
+        // Функция для получения данных
+        function update() {
+          // Заполняем dataArray данными о частоте
+          analyzer.getByteFrequencyData(dataArray);
+          // Здесь можно обработать dataArray (например, отобразить на графике)
+          
+          // Очистка холста
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+          
+          // Отрисовка окружностей соответствующих частоте
+          for(let _1 = bufferLength - 1; _1 >= 0; _1--) {
+            angle = -2 * dataArray[_1] * Math.PI / 255;
+            color = gradientColors[_1]
+
+            drawArcFill(w / 2, h / 2, radius * (_1 + 1) / bufferLength, 'black', 
+                        0, 2 * Math.PI); // 0, 2 * Math.PI or angle, 0 ?
+
+            drawArcFill(w / 2, h / 2, radius * (_1 + 1) / bufferLength, color, 
+                        angle, 0);
+          }
+          
+          requestAnimationFrame(update);
+        }
+        
+        update(); // Запускаем обновление
+      })
+      .catch(function(err) {
+        alert('Ошибка доступа к микрофону: ' + err);
+      });
+    } else {
+      alert('Ваш браузер не поддерживает getUserMedia');
+    }
+    
+  }
+  
+  micro()
+  
+  const canvas = document.getElementById("myCanvas");
+  const ctx = canvas.getContext("2d");
+  
+  // Устанавливаем размеры канваса равными окну при загрузке
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+  
+  // Обработчик изменения размера окна
+  window.addEventListener('resize', () => {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    w = canvas.clientWidth;
+    h = canvas.clientHeight;
+  });
+  
+  var w = canvas.clientWidth;
+  var h = canvas.clientHeight;
+  
+  const radius = Math.min(w, h) / 2 - 2;
+
+  // Создаем массив цветов градиента
+  const color1 = [0, 80, 60]; 
+  const color2 = [360, 80, 60]; 
+  const steps = 512; 
+  
+  const gradientColors = interpolateColor(color1, color2, steps);
+  
+</script>
+
+</html>
